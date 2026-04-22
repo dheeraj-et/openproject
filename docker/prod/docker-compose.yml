@@ -1,0 +1,32 @@
+# docker/prod/docker-compose.yml
+#
+# Local-deployment stack for the all-in-one OpenProject image built from
+# docker/prod/Dockerfile. Everything (Rails app + bundled Postgres 17 +
+# Hocuspocus + memcached) runs inside a single container; this compose
+# file just captures the env, ports, and volumes that used to live on
+# the `docker run` command line.
+#
+# Usage (from repo root):
+#   cp docker/prod/.env.example docker/prod/.env
+#   # edit docker/prod/.env, fill in real secrets
+#   docker compose -f docker/prod/docker-compose.yml up -d
+#
+# After any code change:
+#   docker build -f docker/prod/Dockerfile --target all-in-one -t openproject-custom:local .
+#   docker compose -f docker/prod/docker-compose.yml up -d --force-recreate
+
+services:
+  openproject:
+    image: ${OPENPROJECT_IMAGE:-openproject-custom:local}
+    container_name: openproject
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "${WEB_PORT:-8080}:80"
+      # Bundled Postgres inside the container listens on 5432.
+      # Expose to the host so pgAdmin (or psql) can connect.
+      - "${POSTGRES_PORT:-55432}:5432"
+    volumes:
+      - "${PGDATA_HOST_PATH}:/var/openproject/pgdata"
+      - "${ASSETS_HOST_PATH}:/var/openproject/assets"

@@ -96,6 +96,64 @@ RSpec.describe WorkPackages::UpdateContract do
       end
     end
 
+    describe "date permission (edit_work_package_dates)" do
+      context "when the user has only :edit_work_package_dates (no :edit_work_packages)" do
+        let(:permissions) { %i[view_work_packages edit_work_package_dates] }
+
+        context "when changing start_date" do
+          before { work_package.start_date = Date.current }
+
+          it_behaves_like "contract is valid"
+        end
+
+        context "when changing due_date" do
+          before { work_package.due_date = Date.current + 7 }
+
+          it_behaves_like "contract is valid"
+        end
+
+        context "when changing subject" do
+          before { work_package.subject = "new subject" }
+
+          it_behaves_like "contract is invalid", subject: :error_readonly
+        end
+      end
+
+      context "when the user has only :edit_work_packages (no :edit_work_package_dates)" do
+        let(:permissions) { %i[view_work_packages edit_work_packages] }
+
+        context "when changing start_date" do
+          before { work_package.start_date = Date.current }
+
+          it_behaves_like "contract is invalid", start_date: :error_readonly
+        end
+
+        context "when changing due_date" do
+          before { work_package.due_date = Date.current + 7 }
+
+          it_behaves_like "contract is invalid", due_date: :error_readonly
+        end
+
+        context "when changing subject" do
+          before { work_package.subject = "new subject" }
+
+          it_behaves_like "contract is valid"
+        end
+      end
+
+      context "when the user is an admin (bypass)" do
+        let(:user) { create(:admin) }
+
+        before do
+          work_package.start_date = Date.current
+          work_package.due_date = Date.current + 7
+          work_package.subject = "new subject"
+        end
+
+        it_behaves_like "contract is valid"
+      end
+    end
+
     describe "project_id" do
       let(:target_project) { persisted_other_project }
       let(:source_permissions) { %i[view_work_packages edit_work_packages move_work_packages] }

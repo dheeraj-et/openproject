@@ -507,6 +507,15 @@ Rails.application.reloader.to_prepare do
                      permissible_on: :project,
                      dependencies: :view_work_packages
 
+      # Allows editing start_date and due_date on work packages without the broader :edit_work_packages.
+      # Granted via roles; assign the role to specific users to give them per-user, per-project date-edit rights.
+      wpt.permission :edit_work_package_dates,
+                     {},
+                     permissible_on: %i[work_package project],
+                     require: :member,
+                     dependencies: :view_work_packages,
+                     contract_actions: { work_packages: %i[update] }
+
       # A user having the following permission can become assignee and/or responsible of a work package.
       # This is a passive permission in the sense that a user having the permission isn't eligible to perform
       # actions but rather to have actions taken together with him/her.

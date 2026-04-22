@@ -29,7 +29,7 @@ ENV BUNDLE_WITHOUT="development:test"
 
 # RAILS
 # Set a default key base, ensure to provide a secure value in production environments!
-ENV SECRET_KEY_BASE=OVERWRITE_ME
+ENV SECRET_KEY_BASE=4ba40f964f31c1391cee91384bc1ba7df7036d46b25ff2b14c1513c36ea30824
 ENV RAILS_ENV=production
 ENV RAILS_LOG_TO_STDOUT=1
 ENV RAILS_SERVE_STATIC_FILES=1
@@ -45,7 +45,7 @@ ENV OPENPROJECT_ANGULAR_UGLIFY=true
 # set the following to an empty string if you don't want to automatically use the bundled hocuspocus
 # (or set an external hocuspocus directly - if empty you can set it in the UI)
 ENV OPENPROJECT_COLLABORATIVE__EDITING__HOCUSPOCUS__URL=auto
-ENV OPENPROJECT_COLLABORATIVE__EDITING__HOCUSPOCUS__SECRET=
+ENV OPENPROJECT_COLLABORATIVE__EDITING__HOCUSPOCUS__SECRET=5c55c5f4de0830d45ef880825f0066e1398477fa64fc5cb5a0e04073a338f723
 
 RUN useradd -d /home/$APP_USER -m $APP_USER && \
   mkdir -p $APP_PATH && chown $APP_USER:$APP_USER $APP_PATH && \
