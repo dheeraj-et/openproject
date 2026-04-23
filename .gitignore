@@ -124,6 +124,7 @@ db/*.sql
 # Local development docker
 /.env
 /docker-compose.override.yml
+/docker/prod/.env
 
 # Local development direnv files
 /.envrc

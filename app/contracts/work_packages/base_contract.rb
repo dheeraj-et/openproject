@@ -114,6 +114,7 @@ module WorkPackages
               }
 
     attribute :start_date,
+              permission: :edit_work_package_dates,
               writable: ->(*) {
                 leaf_or_manually_scheduled?
               } do
@@ -121,6 +122,7 @@ module WorkPackages
     end
 
     attribute :due_date,
+              permission: :edit_work_package_dates,
               writable: ->(*) {
                 leaf_or_manually_scheduled?
               } do

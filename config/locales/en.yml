@@ -4815,6 +4815,8 @@ en:
   permission_delete_wiki_pages_attachments: "Delete attachments"
   permission_edit_work_package_comments: "Moderate comments"
   permission_edit_work_package_comments_explanation: "Caution: Users with this permission are able to edit anyone's comment."
+  permission_edit_work_package_dates: "Edit work package dates"
+  permission_edit_work_package_dates_explanation: "Allows editing start date and due date on work packages without the broader Edit work packages permission."
   permission_edit_work_packages: "Edit work packages"
   permission_edit_messages: "Edit messages"
   permission_edit_own_internal_comments: "Edit own internal comments"

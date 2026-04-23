@@ -35,6 +35,7 @@ module WorkPackages
     class << self
       def update_allowed?(user:, work_package:)
         allowed_in_work_package?(user, work_package, :edit_work_packages) ||
+          allowed_in_work_package?(user, work_package, :edit_work_package_dates) ||
           allowed_in_project?(user, work_package, :assign_versions) ||
           allowed_in_project?(user, work_package, :change_work_package_status) ||
           allowed_in_project?(user, work_package, :manage_subtasks) ||
@@ -61,8 +62,8 @@ module WorkPackages
     end
 
     attribute :lock_version,
-              permission: %i[edit_work_packages change_work_package_status assign_versions manage_subtasks
-                             move_work_packages] do
+              permission: %i[edit_work_packages edit_work_package_dates change_work_package_status assign_versions
+                             manage_subtasks move_work_packages] do
       if model.lock_version.nil? || model.lock_version_changed?
         errors.add :base, :error_conflict
       end
