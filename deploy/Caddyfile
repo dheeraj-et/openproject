@@ -1,0 +1,9 @@
+:80 {
+	handle_path /hocuspocus* {
+		reverse_proxy hocuspocus:1234
+	}
+
+	handle {
+		reverse_proxy web:8080
+	}
+}

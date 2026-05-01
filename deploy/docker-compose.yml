@@ -1,0 +1,119 @@
+# Cloud-server compose for the DEV OpenProject stack (slim image, external Postgres).
+# Coexists alongside the existing PROD OpenProject stack in /opt/openproject.
+#
+# Lives on the server at: /opt/openproject-dev/docker-compose.yml
+# Project name (forced via -p):       openproject-dev
+# Image source:                       GHCR (built by .github/workflows/deploy.yml)
+# Database:                           external Azure Postgres (configured in .env)
+# Host port:                          8082 (prod uses 8081)
+
+x-op-app-env: &app-env
+  RAILS_CACHE_STORE: memcache
+  OPENPROJECT_CACHE__MEMCACHE__SERVER: cache:11211
+  OPENPROJECT_RAILS__RELATIVE__URL__ROOT: "${OPENPROJECT_RAILS__RELATIVE__URL__ROOT:-}"
+  OPENPROJECT_DB_URL: "postgres://${DB_POSTGRESDB_USER}:${DB_POSTGRESDB_PASSWORD}@${DB_POSTGRESDB_HOST}:${DB_POSTGRESDB_PORT}/${DB_POSTGRESDB_DATABASE}?sslmode=require&options=-c%20search_path%3D${DB_POSTGRESDB_SCHEMA:-public}"
+  DATABASE_URL: "postgres://${DB_POSTGRESDB_USER}:${DB_POSTGRESDB_PASSWORD}@${DB_POSTGRESDB_HOST}:${DB_POSTGRESDB_PORT}/${DB_POSTGRESDB_DATABASE}?sslmode=require&options=-c%20search_path%3D${DB_POSTGRESDB_SCHEMA:-public}"
+  USE_PUMA: "true"
+  RAILS_MIN_THREADS: ${RAILS_MIN_THREADS:-4}
+  RAILS_MAX_THREADS: ${RAILS_MAX_THREADS:-16}
+  SECRET_KEY_BASE: ${SECRET_KEY_BASE}
+  OPENPROJECT_HOST__NAME: ${OPENPROJECT_HOST__NAME}
+  OPENPROJECT_HTTPS: ${OPENPROJECT_HTTPS:-true}
+  OPENPROJECT_HSTS: ${OPENPROJECT_HSTS:-true}
+  OPENPROJECT_COLLABORATIVE__EDITING__HOCUSPOCUS__URL: ${COLLABORATIVE_SERVER_URL}
+  OPENPROJECT_COLLABORATIVE__EDITING__HOCUSPOCUS__SECRET: ${COLLABORATIVE_SERVER_SECRET}
+  IMAP_ENABLED: ${IMAP_ENABLED:-false}
+  OPENPROJECT_SMTP__ADDRESS: ${OPENPROJECT_SMTP__ADDRESS}
+  OPENPROJECT_SMTP__PORT: ${OPENPROJECT_SMTP__PORT}
+  OPENPROJECT_SMTP__DOMAIN: ${OPENPROJECT_SMTP__DOMAIN}
+  OPENPROJECT_SMTP__AUTHENTICATION: ${OPENPROJECT_SMTP__AUTHENTICATION}
+  OPENPROJECT_SMTP__USER__NAME: ${OPENPROJECT_SMTP__USER__NAME}
+  OPENPROJECT_SMTP__PASSWORD: ${OPENPROJECT_SMTP__PASSWORD}
+  OPENPROJECT_SMTP__ENABLE__STARTTLS__AUTO: ${OPENPROJECT_SMTP__ENABLE__STARTTLS__AUTO}
+  OPENPROJECT_MAIL__FROM: ${OPENPROJECT_MAIL__FROM}
+
+services:
+  cache:
+    image: memcached
+    container_name: op-dev-cache
+    restart: unless-stopped
+    networks:
+      - op-dev-net
+
+  hocuspocus:
+    image: openproject/hocuspocus:17.3.1
+    container_name: op-dev-hocuspocus
+    restart: unless-stopped
+    environment:
+      SECRET: ${COLLABORATIVE_SERVER_SECRET}
+    networks:
+      - op-dev-net
+
+  web:
+    image: "${OPENPROJECT_IMAGE:-ghcr.io/excelerate-technologies/xira-custom}:${OPENPROJECT_TAG:-latest}"
+    container_name: op-dev-web
+    restart: unless-stopped
+    command: ./docker/prod/web
+    environment: *app-env
+    volumes:
+      - "${OPDATA:-./opdata}:/var/openproject/assets"
+    networks:
+      - op-dev-net
+    depends_on:
+      - cache
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health_checks/default"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+
+  worker:
+    image: "${OPENPROJECT_IMAGE:-ghcr.io/excelerate-technologies/xira-custom}:${OPENPROJECT_TAG:-latest}"
+    container_name: op-dev-worker
+    restart: unless-stopped
+    command: ./docker/prod/worker
+    environment: *app-env
+    volumes:
+      - "${OPDATA:-./opdata}:/var/openproject/assets"
+    networks:
+      - op-dev-net
+    depends_on:
+      - cache
+
+  cron:
+    image: "${OPENPROJECT_IMAGE:-ghcr.io/excelerate-technologies/xira-custom}:${OPENPROJECT_TAG:-latest}"
+    container_name: op-dev-cron
+    restart: unless-stopped
+    command: ./docker/prod/cron
+    environment: *app-env
+    volumes:
+      - "${OPDATA:-./opdata}:/var/openproject/assets"
+    networks:
+      - op-dev-net
+    depends_on:
+      - cache
+
+  proxy:
+    image: caddy:2-alpine
+    container_name: op-dev-proxy
+    restart: unless-stopped
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    ports:
+      - "${PORT:-8082}:80"
+    depends_on:
+      - web
+      - hocuspocus
+    networks:
+      - op-dev-net
+
+networks:
+  op-dev-net:
+    name: op-dev-net
+
+volumes:
+  caddy-data:
+  caddy-config:
